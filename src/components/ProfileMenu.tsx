@@ -11,9 +11,14 @@ import {
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 
 const ProfileMenu = () => {
   const [theme, setTheme] = useState<"light" | "earth" | "dark">("light");
+  const { user, signOut, isAdmin, isStudent } = useAuth();
+  const navigate = useNavigate();
 
   const handleThemeChange = (newTheme: "light" | "earth" | "dark") => {
     setTheme(newTheme);
@@ -30,6 +35,19 @@ const ProfileMenu = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
+  if (!user) {
+    return (
+      <Button onClick={() => navigate("/auth")} variant="default">
+        Sign In
+      </Button>
+    );
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="outline-none">
@@ -41,6 +59,20 @@ const ProfileMenu = () => {
         </Avatar>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 animate-scale-in">
+        {isStudent && (
+          <DropdownMenuItem onClick={() => navigate("/student")} className="cursor-pointer">
+            <User className="mr-2 h-4 w-4" />
+            <span>Student Dashboard</span>
+          </DropdownMenuItem>
+        )}
+        {isAdmin && (
+          <DropdownMenuItem onClick={() => navigate("/admin")} className="cursor-pointer">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Admin Dashboard</span>
+          </DropdownMenuItem>
+        )}
+        {(isStudent || isAdmin) && <DropdownMenuSeparator />}
+        
         <DropdownMenuItem className="cursor-pointer">
           <Settings className="mr-2 h-4 w-4" />
           <span>Change Details</span>
@@ -92,7 +124,7 @@ const ProfileMenu = () => {
           <span>Delete Account</span>
         </DropdownMenuItem>
         
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Sign Out</span>
         </DropdownMenuItem>
