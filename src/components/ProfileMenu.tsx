@@ -42,9 +42,14 @@ const ProfileMenu = () => {
 
   if (!user) {
     return (
-      <Button onClick={() => navigate("/auth")} variant="default">
-        Sign In
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button onClick={() => navigate("/auth")} variant="outline">
+          Sign In
+        </Button>
+        <Button onClick={() => navigate("/auth")} variant="default">
+          Sign Up
+        </Button>
+      </div>
     );
   }
 
