@@ -10,9 +10,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const SearchSection = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
+
+  // Fetch courses from the database
+  const { data: courses } = useQuery({
+    queryKey: ["courses"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("courses")
+        .select("*")
+        .order("course_code");
+      if (error) throw error;
+      return data;
+    },
+  });
 
   return (
     <section className="py-16 bg-card">
@@ -58,30 +75,34 @@ const SearchSection = () => {
           
           <TabsContent value="browse" className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
-              <Select>
+              <Select value={selectedCourse} onValueChange={setSelectedCourse}>
                 <SelectTrigger className="h-12 text-base border-2 focus:ring-primary">
                   <SelectValue placeholder="Select your course" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="cs">Computer Science</SelectItem>
-                  <SelectItem value="eng">Engineering</SelectItem>
-                  <SelectItem value="bus">Business</SelectItem>
-                  <SelectItem value="med">Medicine</SelectItem>
-                  <SelectItem value="arts">Arts & Humanities</SelectItem>
-                  <SelectItem value="sci">Natural Sciences</SelectItem>
+                <SelectContent className="bg-popover z-50">
+                  {courses && courses.length > 0 ? (
+                    courses.map((course) => (
+                      <SelectItem key={course.id} value={course.id}>
+                        {course.course_code} - {course.course_name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="none" disabled>
+                      No courses available
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
               
-              <Select>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger className="h-12 text-base border-2 focus:ring-primary">
                   <SelectValue placeholder="Year of study" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-popover z-50">
                   <SelectItem value="1">Year 1</SelectItem>
                   <SelectItem value="2">Year 2</SelectItem>
                   <SelectItem value="3">Year 3</SelectItem>
                   <SelectItem value="4">Year 4</SelectItem>
-                  <SelectItem value="grad">Graduate</SelectItem>
                 </SelectContent>
               </Select>
             </div>
