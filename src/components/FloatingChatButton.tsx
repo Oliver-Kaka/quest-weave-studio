@@ -1,64 +1,118 @@
 import { useState } from "react";
-import { MessageCircle, X } from "lucide-react";
+import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const FloatingChatButton = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([
+    { role: "assistant", content: "Hello! I'm your AI study assistant. How can I help you today?" }
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSendMessage = async () => {
+    if (!input.trim() || loading) return;
+
+    const userMessage = { role: "user", content: input };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("google-ai", {
+        body: {
+          type: "chat",
+          messages: [...messages, userMessage],
+        },
+      });
+
+      if (error) throw error;
+
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: data.result },
+      ]);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
       {/* Floating Button */}
       <Button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-2xl hover:shadow-xl transition-all duration-300 z-50 bg-primary hover:bg-primary/90 animate-fade-in"
         size="icon"
+        className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-50"
       >
-        {isOpen ? (
-          <X className="w-6 h-6 text-primary-foreground" />
-        ) : (
-          <MessageCircle className="w-6 h-6 text-primary-foreground" />
-        )}
+        {isOpen ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
       </Button>
 
       {/* Chat Popup */}
       {isOpen && (
-        <Card className="fixed bottom-24 right-6 w-80 sm:w-96 h-[500px] shadow-2xl z-50 animate-scale-in flex flex-col border-2">
-          {/* Header */}
-          <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
-            <h3 className="font-semibold text-lg flex items-center gap-2">
-              <MessageCircle className="w-5 h-5" />
-              AI Study Assistant
-            </h3>
-            <p className="text-sm opacity-90 mt-1">
-              Ask me anything about your courses!
-            </p>
-          </div>
-
-          {/* Chat Area */}
-          <div className="flex-1 p-4 overflow-y-auto bg-muted/30">
-            <div className="space-y-4">
-              <div className="bg-card p-3 rounded-lg shadow-sm border max-w-[85%]">
-                <p className="text-sm">
-                  👋 Hello! I'm your AI study assistant. How can I help you today?
-                </p>
+        <Card className="fixed bottom-24 right-6 w-96 h-[500px] shadow-xl z-50 flex flex-col">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">AI Study Assistant</CardTitle>
+            <CardDescription>Ask me anything about your studies</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col p-0">
+            <ScrollArea className="flex-1 px-4">
+              <div className="space-y-4 py-4">
+                {messages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                        msg.role === "user"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted"
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                  </div>
+                ))}
+                {loading && (
+                  <div className="flex justify-start">
+                    <div className="bg-muted rounded-lg px-4 py-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+            <div className="border-t p-4">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Type your message..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                  disabled={loading}
+                />
+                <Button 
+                  onClick={handleSendMessage} 
+                  size="icon"
+                  disabled={loading || !input.trim()}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-          </div>
-
-          {/* Input Area */}
-          <div className="p-4 border-t bg-card">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Type your question..."
-                className="flex-1 px-3 py-2 border-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm bg-background"
-              />
-              <Button size="sm" className="px-4">
-                Send
-              </Button>
-            </div>
-          </div>
+          </CardContent>
         </Card>
       )}
     </>

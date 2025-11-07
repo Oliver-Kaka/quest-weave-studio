@@ -2,28 +2,81 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Send, FileText, MessageSquare, BookOpen } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, FileText, Brain, Presentation, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import Navbar from "@/components/Navbar";
 
 const AITools = () => {
   const [loading, setLoading] = useState(false);
-  const [summaryText, setSummaryText] = useState("");
+  
+  // Quiz state
+  const [quizNotes, setQuizNotes] = useState("");
+  const [quizType, setQuizType] = useState("mixed");
+  const [numQuestions, setNumQuestions] = useState("5");
+  const [quizResult, setQuizResult] = useState<any>(null);
+  
+  // Summarization state
+  const [summaryNotes, setSummaryNotes] = useState("");
   const [summaryResult, setSummaryResult] = useState("");
-  const [chatMessages, setChatMessages] = useState<Array<{ role: string; content: string }>>([]);
-  const [chatInput, setChatInput] = useState("");
-  const [studyTopic, setStudyTopic] = useState("");
-  const [studyPlan, setStudyPlan] = useState("");
+  
+  // Presentation state
+  const [presentationNotes, setPresentationNotes] = useState("");
+  const [presentationResult, setPresentationResult] = useState<any>(null);
+  
+  // Flashcard state
+  const [flashcardNotes, setFlashcardNotes] = useState("");
+  const [flashcardResult, setFlashcardResult] = useState<any>(null);
 
-  const handleSummarize = async () => {
-    if (!summaryText.trim()) {
+  const handleGenerateQuiz = async () => {
+    if (!quizNotes.trim()) {
       toast({
         title: "Error",
-        description: "Please enter text to summarize",
+        description: "Please enter notes to generate a quiz",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("google-ai", {
+        body: {
+          type: "quiz",
+          notes: quizNotes,
+          quizType,
+          numQuestions: parseInt(numQuestions),
+        },
+      });
+
+      if (error) throw error;
+      
+      try {
+        const parsedResult = JSON.parse(data.result.replace(/```json\n?/g, '').replace(/```\n?/g, ''));
+        setQuizResult(parsedResult);
+      } catch {
+        setQuizResult(data.result);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate quiz",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSummarize = async () => {
+    if (!summaryNotes.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter notes to summarize",
         variant: "destructive",
       });
       return;
@@ -34,7 +87,7 @@ const AITools = () => {
       const { data, error } = await supabase.functions.invoke("google-ai", {
         body: {
           type: "summarize",
-          text: summaryText,
+          notes: summaryNotes,
         },
       });
 
@@ -51,44 +104,11 @@ const AITools = () => {
     }
   };
 
-  const handleChat = async () => {
-    if (!chatInput.trim()) return;
-
-    const userMessage = { role: "user", content: chatInput };
-    setChatMessages((prev) => [...prev, userMessage]);
-    setChatInput("");
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke("google-ai", {
-        body: {
-          type: "chat",
-          messages: [...chatMessages, userMessage],
-        },
-      });
-
-      if (error) throw error;
-
-      setChatMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.result },
-      ]);
-    } catch (error: any) {
+  const handleGeneratePresentation = async () => {
+    if (!presentationNotes.trim()) {
       toast({
         title: "Error",
-        description: error.message || "Failed to send message",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGenerateStudyPlan = async () => {
-    if (!studyTopic.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a topic",
+        description: "Please enter notes to create a presentation",
         variant: "destructive",
       });
       return;
@@ -98,17 +118,61 @@ const AITools = () => {
     try {
       const { data, error } = await supabase.functions.invoke("google-ai", {
         body: {
-          type: "study-plan",
-          topic: studyTopic,
+          type: "presentation",
+          notes: presentationNotes,
         },
       });
 
       if (error) throw error;
-      setStudyPlan(data.result);
+      
+      try {
+        const parsedResult = JSON.parse(data.result.replace(/```json\n?/g, '').replace(/```\n?/g, ''));
+        setPresentationResult(parsedResult);
+      } catch {
+        setPresentationResult(data.result);
+      }
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "Failed to generate study plan",
+        description: error.message || "Failed to generate presentation",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateFlashcards = async () => {
+    if (!flashcardNotes.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter notes to generate flashcards",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("google-ai", {
+        body: {
+          type: "flashcards",
+          notes: flashcardNotes,
+        },
+      });
+
+      if (error) throw error;
+      
+      try {
+        const parsedResult = JSON.parse(data.result.replace(/```json\n?/g, '').replace(/```\n?/g, ''));
+        setFlashcardResult(parsedResult);
+      } catch {
+        setFlashcardResult(data.result);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to generate flashcards",
         variant: "destructive",
       });
     } finally {
@@ -128,38 +192,159 @@ const AITools = () => {
             </p>
           </div>
 
-          <Tabs defaultValue="summarize" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+          <Tabs defaultValue="quiz" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="quiz">
+                <Brain className="w-4 h-4 mr-2" />
+                Quiz
+              </TabsTrigger>
               <TabsTrigger value="summarize">
                 <FileText className="w-4 h-4 mr-2" />
                 Summarize
               </TabsTrigger>
-              <TabsTrigger value="chat">
-                <MessageSquare className="w-4 h-4 mr-2" />
-                Chat
+              <TabsTrigger value="presentation">
+                <Presentation className="w-4 h-4 mr-2" />
+                Presentation
               </TabsTrigger>
-              <TabsTrigger value="study-plan">
-                <BookOpen className="w-4 h-4 mr-2" />
-                Study Plan
+              <TabsTrigger value="flashcards">
+                <Layers className="w-4 h-4 mr-2" />
+                Flashcards
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="summarize" className="space-y-4">
+            <TabsContent value="quiz" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Text Summarizer</CardTitle>
+                  <CardTitle>Quiz Generator</CardTitle>
                   <CardDescription>
-                    Get concise summaries of long texts, articles, or notes
+                    Generate quizzes from your notes
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="summary-text">Text to Summarize</Label>
+                    <Label htmlFor="quiz-notes">Your Notes</Label>
                     <Textarea
-                      id="summary-text"
-                      placeholder="Paste your text here..."
-                      value={summaryText}
-                      onChange={(e) => setSummaryText(e.target.value)}
+                      id="quiz-notes"
+                      placeholder="Paste your notes here..."
+                      value={quizNotes}
+                      onChange={(e) => setQuizNotes(e.target.value)}
+                      rows={8}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Quiz Type</Label>
+                      <RadioGroup value={quizType} onValueChange={setQuizType}>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="mixed" id="mixed" />
+                          <Label htmlFor="mixed">Mixed</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="multiple-choice" id="multiple-choice" />
+                          <Label htmlFor="multiple-choice">Multiple Choice</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="true-false" id="true-false" />
+                          <Label htmlFor="true-false">True/False</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="multiple-answer" id="multiple-answer" />
+                          <Label htmlFor="multiple-answer">Multiple Answers</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label>Number of Questions</Label>
+                      <Select value={numQuestions} onValueChange={setNumQuestions}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="5">5 Questions</SelectItem>
+                          <SelectItem value="10">10 Questions</SelectItem>
+                          <SelectItem value="15">15 Questions</SelectItem>
+                          <SelectItem value="20">20 Questions</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleGenerateQuiz}
+                    disabled={loading}
+                    className="w-full"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating Quiz...
+                      </>
+                    ) : (
+                      "Generate Quiz"
+                    )}
+                  </Button>
+
+                  {quizResult && (
+                    <div className="space-y-4 mt-4">
+                      <Label>Generated Quiz</Label>
+                      <div className="space-y-4">
+                        {Array.isArray(quizResult) ? (
+                          quizResult.map((q: any, idx: number) => (
+                            <Card key={idx}>
+                              <CardContent className="pt-6">
+                                <p className="font-semibold mb-2">
+                                  {idx + 1}. {q.question}
+                                </p>
+                                {q.options && (
+                                  <ul className="space-y-1 ml-4">
+                                    {q.options.map((opt: string, i: number) => (
+                                      <li key={i} className="text-sm text-muted-foreground">
+                                        {String.fromCharCode(65 + i)}. {opt}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                                <p className="text-sm text-primary mt-2">
+                                  Answer: {Array.isArray(q.correctAnswer) ? q.correctAnswer.join(", ") : q.correctAnswer}
+                                </p>
+                                {q.explanation && (
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {q.explanation}
+                                  </p>
+                                )}
+                              </CardContent>
+                            </Card>
+                          ))
+                        ) : (
+                          <div className="p-4 bg-muted rounded-md">
+                            <p className="whitespace-pre-wrap">{quizResult}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="summarize" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notes Summarizer</CardTitle>
+                  <CardDescription>
+                    Get concise summaries of your notes
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="summary-notes">Your Notes</Label>
+                    <Textarea
+                      id="summary-notes"
+                      placeholder="Paste your notes here..."
+                      value={summaryNotes}
+                      onChange={(e) => setSummaryNotes(e.target.value)}
                       rows={8}
                     />
                   </div>
@@ -189,92 +374,134 @@ const AITools = () => {
               </Card>
             </TabsContent>
 
-            <TabsContent value="chat" className="space-y-4">
+            <TabsContent value="presentation" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>AI Study Assistant</CardTitle>
+                  <CardTitle>Presentation Builder</CardTitle>
                   <CardDescription>
-                    Ask questions and get help with your studies
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="h-[400px] overflow-y-auto space-y-4 p-4 bg-muted/50 rounded-md">
-                    {chatMessages.length === 0 ? (
-                      <p className="text-center text-muted-foreground">
-                        Start a conversation with your AI study assistant
-                      </p>
-                    ) : (
-                      chatMessages.map((msg, idx) => (
-                        <div
-                          key={idx}
-                          className={`p-3 rounded-lg ${
-                            msg.role === "user"
-                              ? "bg-primary text-primary-foreground ml-auto max-w-[80%]"
-                              : "bg-card max-w-[80%]"
-                          }`}
-                        >
-                          <p className="whitespace-pre-wrap">{msg.content}</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Ask a question..."
-                      value={chatInput}
-                      onChange={(e) => setChatInput(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && handleChat()}
-                      disabled={loading}
-                    />
-                    <Button onClick={handleChat} disabled={loading} size="icon">
-                      {loading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="study-plan" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Study Plan Generator</CardTitle>
-                  <CardDescription>
-                    Create a personalized study plan for any topic
+                    Create presentation slides from your notes
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="study-topic">Topic</Label>
-                    <Input
-                      id="study-topic"
-                      placeholder="e.g., Calculus II, World War II, Python Programming"
-                      value={studyTopic}
-                      onChange={(e) => setStudyTopic(e.target.value)}
+                    <Label htmlFor="presentation-notes">Your Notes</Label>
+                    <Textarea
+                      id="presentation-notes"
+                      placeholder="Paste your notes here..."
+                      value={presentationNotes}
+                      onChange={(e) => setPresentationNotes(e.target.value)}
+                      rows={8}
                     />
                   </div>
                   <Button
-                    onClick={handleGenerateStudyPlan}
+                    onClick={handleGeneratePresentation}
                     disabled={loading}
                     className="w-full"
                   >
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
+                        Creating Presentation...
                       </>
                     ) : (
-                      "Generate Study Plan"
+                      "Create Presentation"
                     )}
                   </Button>
-                  {studyPlan && (
-                    <div className="space-y-2">
-                      <Label>Your Study Plan</Label>
-                      <div className="p-4 bg-muted rounded-md">
-                        <p className="whitespace-pre-wrap">{studyPlan}</p>
+                  {presentationResult && (
+                    <div className="space-y-4 mt-4">
+                      <Label>Presentation Slides</Label>
+                      <div className="space-y-4">
+                        {Array.isArray(presentationResult) ? (
+                          presentationResult.map((slide: any, idx: number) => (
+                            <Card key={idx}>
+                              <CardHeader>
+                                <CardTitle className="text-lg">
+                                  Slide {idx + 1}: {slide.title}
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <ul className="list-disc list-inside space-y-1">
+                                  {slide.content.map((point: string, i: number) => (
+                                    <li key={i} className="text-sm">{point}</li>
+                                  ))}
+                                </ul>
+                                {slide.notes && (
+                                  <p className="text-sm text-muted-foreground mt-3 italic">
+                                    Speaker Notes: {slide.notes}
+                                  </p>
+                                )}
+                              </CardContent>
+                            </Card>
+                          ))
+                        ) : (
+                          <div className="p-4 bg-muted rounded-md">
+                            <p className="whitespace-pre-wrap">{presentationResult}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="flashcards" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Flashcard Generator</CardTitle>
+                  <CardDescription>
+                    Generate study flashcards from your notes
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="flashcard-notes">Your Notes</Label>
+                    <Textarea
+                      id="flashcard-notes"
+                      placeholder="Paste your notes here..."
+                      value={flashcardNotes}
+                      onChange={(e) => setFlashcardNotes(e.target.value)}
+                      rows={8}
+                    />
+                  </div>
+                  <Button
+                    onClick={handleGenerateFlashcards}
+                    disabled={loading}
+                    className="w-full"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating Flashcards...
+                      </>
+                    ) : (
+                      "Generate Flashcards"
+                    )}
+                  </Button>
+                  {flashcardResult && (
+                    <div className="space-y-4 mt-4">
+                      <Label>Flashcards</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {Array.isArray(flashcardResult) ? (
+                          flashcardResult.map((card: any, idx: number) => (
+                            <Card key={idx} className="cursor-pointer hover:shadow-lg transition-shadow">
+                              <CardHeader>
+                                <CardTitle className="text-sm font-semibold">
+                                  {card.front}
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <p className="text-sm text-muted-foreground">
+                                  {card.back}
+                                </p>
+                              </CardContent>
+                            </Card>
+                          ))
+                        ) : (
+                          <div className="p-4 bg-muted rounded-md col-span-2">
+                            <p className="whitespace-pre-wrap">{flashcardResult}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

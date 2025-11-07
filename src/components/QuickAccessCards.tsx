@@ -1,6 +1,7 @@
 import { BookOpen, Bot, Calendar } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import aiToolsImage from "@/assets/ai-tools.jpg";
 import studyPlanImage from "@/assets/study-plan.jpg";
 
@@ -14,6 +15,7 @@ const QuickAccessCards = () => {
       buttonText: "CS301 - Data Structures",
       gradient: "from-primary/10 to-accent/10",
       delay: "0s",
+      link: "/student",
     },
     {
       title: "AI Tools",
@@ -24,6 +26,7 @@ const QuickAccessCards = () => {
       buttonText: "Explore AI Tools",
       gradient: "from-accent/10 to-primary/10",
       delay: "0.1s",
+      link: "/ai-tools",
     },
     {
       title: "Study Plan",
@@ -33,6 +36,7 @@ const QuickAccessCards = () => {
       buttonText: "View Study Plan",
       gradient: "from-primary/10 to-accent/10",
       delay: "0.2s",
+      link: "/study-plan",
     },
   ];
 
@@ -97,12 +101,14 @@ const QuickAccessCards = () => {
                     </ul>
                   )}
                   
-                  <Button 
-                    className="w-full font-semibold"
-                    variant={index === 1 ? "default" : "outline"}
-                  >
-                    {card.buttonText}
-                  </Button>
+                  <Link to={card.link}>
+                    <Button 
+                      className="w-full font-semibold"
+                      variant={index === 1 ? "default" : "outline"}
+                    >
+                      {card.buttonText}
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

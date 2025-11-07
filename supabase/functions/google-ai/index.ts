@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { type, text, messages, topic } = await req.json();
+    const { type, text, messages, topic, notes, quizType, numQuestions } = await req.json();
     const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
 
     if (!GOOGLE_AI_API_KEY) {
@@ -23,7 +23,85 @@ serve(async (req) => {
 
     switch (type) {
       case "summarize":
-        prompt = `Please provide a clear and concise summary of the following text:\n\n${text}`;
+        prompt = `Please provide a clear and concise summary of the following notes:\n\n${notes}`;
+        conversationMessages = [
+          {
+            role: "user",
+            parts: [{ text: prompt }],
+          },
+        ];
+        break;
+
+      case "quiz":
+        const quizTypeText = quizType === "mixed" ? "a mixture of multiple choice, true/false, and multiple answer questions" : 
+                            quizType === "multiple-choice" ? "multiple choice questions with 4 options each" :
+                            quizType === "true-false" ? "true or false questions" :
+                            "multiple answer questions (select all that apply) with 5 options each";
+        
+        prompt = `Based on the following notes, generate ${numQuestions} ${quizTypeText}.
+
+Notes:
+${notes}
+
+Format your response as a JSON array with the following structure:
+[
+  {
+    "question": "Question text",
+    "type": "multiple-choice" | "true-false" | "multiple-answer",
+    "options": ["Option 1", "Option 2", ...],
+    "correctAnswer": "Option text" | ["Option 1", "Option 2"] (for multiple-answer),
+    "explanation": "Brief explanation of the correct answer"
+  }
+]
+
+Make sure questions test understanding, not just memorization.`;
+        conversationMessages = [
+          {
+            role: "user",
+            parts: [{ text: prompt }],
+          },
+        ];
+        break;
+
+      case "flashcards":
+        prompt = `Based on the following notes, generate 10 flashcards for studying.
+
+Notes:
+${notes}
+
+Format your response as a JSON array:
+[
+  {
+    "front": "Question or concept",
+    "back": "Answer or explanation"
+  }
+]
+
+Focus on key concepts, definitions, and important facts.`;
+        conversationMessages = [
+          {
+            role: "user",
+            parts: [{ text: prompt }],
+          },
+        ];
+        break;
+
+      case "presentation":
+        prompt = `Based on the following notes, create a presentation outline with 5-8 slides.
+
+Notes:
+${notes}
+
+Format your response as a JSON array:
+[
+  {
+    "title": "Slide title",
+    "content": ["Bullet point 1", "Bullet point 2", "Bullet point 3"],
+    "notes": "Speaker notes for this slide"
+  }
+]
+
+Make it clear, concise, and engaging.`;
         conversationMessages = [
           {
             role: "user",
