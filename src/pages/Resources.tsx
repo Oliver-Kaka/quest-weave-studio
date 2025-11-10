@@ -13,6 +13,7 @@ interface Resource {
   title: string;
   description: string | null;
   file_type: string;
+  resource_type: string;
   file_url: string;
   created_at: string;
   unit_id: string;
@@ -20,10 +21,10 @@ interface Resource {
     unit_name: string;
     unit_code: string;
     course_id: string;
+    year: number;
     courses: {
       course_name: string;
       course_code: string;
-      year: number;
     };
   };
 }
@@ -32,7 +33,6 @@ interface Course {
   id: string;
   course_name: string;
   course_code: string;
-  year: number;
 }
 
 interface Unit {
@@ -40,6 +40,7 @@ interface Unit {
   unit_name: string;
   unit_code: string;
   course_id: string;
+  year: number;
 }
 
 const Resources = () => {
@@ -67,7 +68,7 @@ const Resources = () => {
       const { data: coursesData, error: coursesError } = await supabase
         .from("courses")
         .select("*")
-        .order("year", { ascending: true });
+        .order("course_code", { ascending: true });
 
       if (coursesError) throw coursesError;
       setCourses(coursesData || []);
@@ -89,10 +90,10 @@ const Resources = () => {
             unit_name,
             unit_code,
             course_id,
+            year,
             courses!inner (
               course_name,
-              course_code,
-              year
+              course_code
             )
           )
         `)
@@ -115,14 +116,14 @@ const Resources = () => {
   const filteredResources = resources.filter((resource) => {
     const courseMatch = selectedCourse === "all" || resource.units.course_id === selectedCourse;
     const unitMatch = selectedUnit === "all" || resource.unit_id === selectedUnit;
-    const yearMatch = selectedYear === "all" || resource.units.courses.year.toString() === selectedYear;
-    const typeMatch = selectedType === "all" || resource.file_type === selectedType;
+    const yearMatch = selectedYear === "all" || resource.units.year.toString() === selectedYear;
+    const typeMatch = selectedType === "all" || resource.resource_type === selectedType;
 
     return courseMatch && unitMatch && yearMatch && typeMatch;
   });
 
-  const uniqueYears = Array.from(new Set(courses.map(c => c.year))).sort();
-  const uniqueTypes = Array.from(new Set(resources.map(r => r.file_type)));
+  const uniqueYears = Array.from(new Set(units.map(u => u.year))).sort();
+  const uniqueTypes = Array.from(new Set(resources.map(r => r.resource_type)));
   const filteredUnits = selectedCourse === "all" 
     ? units 
     : units.filter(u => u.course_id === selectedCourse);
@@ -306,13 +307,13 @@ const Resources = () => {
                               {resource.units.unit_code} - {resource.units.unit_name}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Year {resource.units.courses.year}
+                              Year {resource.units.year}
                             </p>
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2">
-                          <span className="px-2 py-1 rounded-md bg-secondary text-secondary-foreground text-xs font-medium">
-                            {resource.file_type.replace('_', ' ')}
+                          <span className="px-2 py-1 rounded-md bg-secondary text-secondary-foreground text-xs font-medium capitalize">
+                            {resource.resource_type.replace('_', ' ')}
                           </span>
                         </div>
                       </div>

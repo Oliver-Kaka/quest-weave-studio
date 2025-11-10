@@ -21,6 +21,7 @@ const StudentDashboard = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
+  const [resourceType, setResourceType] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
   // Fetch all units
@@ -54,7 +55,7 @@ const StudentDashboard = () => {
 
   const handleFileUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file || !selectedUnit || !user) return;
+    if (!file || !selectedUnit || !resourceType || !user) return;
 
     setUploading(true);
 
@@ -83,6 +84,7 @@ const StudentDashboard = () => {
           title,
           description,
           file_type: file.type,
+          resource_type: resourceType,
           file_url: publicUrl,
           file_size: file.size,
         });
@@ -98,6 +100,7 @@ const StudentDashboard = () => {
       setTitle("");
       setDescription("");
       setSelectedUnit("");
+      setResourceType("");
       setFile(null);
       refetch();
     } catch (error: any) {
@@ -169,6 +172,21 @@ const StudentDashboard = () => {
                           {unit.unit_code} - {unit.unit_name}
                         </SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="resource-type">Resource Type</Label>
+                  <Select value={resourceType} onValueChange={setResourceType} required>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select resource type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="notes">Notes</SelectItem>
+                      <SelectItem value="past_papers">Past Papers</SelectItem>
+                      <SelectItem value="presentation">Presentation</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

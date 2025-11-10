@@ -22,12 +22,12 @@ const AdminDashboard = () => {
   // Course form state
   const [courseCode, setCourseCode] = useState("");
   const [courseName, setCourseName] = useState("");
-  const [courseYear, setCourseYear] = useState("");
   const [courseDescription, setCourseDescription] = useState("");
 
   // Unit form state
   const [unitCode, setUnitCode] = useState("");
   const [unitName, setUnitName] = useState("");
+  const [unitYear, setUnitYear] = useState("");
   const [unitDescription, setUnitDescription] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
 
@@ -126,7 +126,6 @@ const AdminDashboard = () => {
       const { error } = await supabase.from("courses").insert({
         course_code: courseCode,
         course_name: courseName,
-        year: parseInt(courseYear),
         description: courseDescription,
       });
 
@@ -135,7 +134,6 @@ const AdminDashboard = () => {
       toast({ title: "Success!", description: "Course added successfully." });
       setCourseCode("");
       setCourseName("");
-      setCourseYear("");
       setCourseDescription("");
       refetchCourses();
     } catch (error: any) {
@@ -150,6 +148,7 @@ const AdminDashboard = () => {
         course_id: selectedCourse,
         unit_code: unitCode,
         unit_name: unitName,
+        year: parseInt(unitYear),
         description: unitDescription,
       });
 
@@ -158,6 +157,7 @@ const AdminDashboard = () => {
       toast({ title: "Success!", description: "Unit added successfully." });
       setUnitCode("");
       setUnitName("");
+      setUnitYear("");
       setUnitDescription("");
       setSelectedCourse("");
       refetchUnits();
@@ -456,17 +456,6 @@ const AdminDashboard = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="course-year">Year</Label>
-                      <Input
-                        id="course-year"
-                        type="number"
-                        value={courseYear}
-                        onChange={(e) => setCourseYear(e.target.value)}
-                        placeholder="e.g., 2024"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="course-description">Description</Label>
                       <Textarea
                         id="course-description"
@@ -553,6 +542,20 @@ const AdminDashboard = () => {
                         placeholder="e.g., Introduction to Programming"
                         required
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="unit-year">Year of Study</Label>
+                      <Select value={unitYear} onValueChange={setUnitYear} required>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">Year 1</SelectItem>
+                          <SelectItem value="2">Year 2</SelectItem>
+                          <SelectItem value="3">Year 3</SelectItem>
+                          <SelectItem value="4">Year 4</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="unit-description">Description</Label>

@@ -55,7 +55,6 @@ export type Database = {
           description: string | null
           id: string
           updated_at: string
-          year: number
         }
         Insert: {
           course_code: string
@@ -64,7 +63,6 @@ export type Database = {
           description?: string | null
           id?: string
           updated_at?: string
-          year: number
         }
         Update: {
           course_code?: string
@@ -73,7 +71,6 @@ export type Database = {
           description?: string | null
           id?: string
           updated_at?: string
-          year?: number
         }
         Relationships: []
       }
@@ -122,6 +119,7 @@ export type Database = {
           file_type: string
           file_url: string
           id: string
+          resource_type: string
           title: string
           unit_id: string
           updated_at: string
@@ -138,6 +136,7 @@ export type Database = {
           file_type: string
           file_url: string
           id?: string
+          resource_type?: string
           title: string
           unit_id: string
           updated_at?: string
@@ -154,6 +153,7 @@ export type Database = {
           file_type?: string
           file_url?: string
           id?: string
+          resource_type?: string
           title?: string
           unit_id?: string
           updated_at?: string
@@ -178,6 +178,7 @@ export type Database = {
           unit_code: string
           unit_name: string
           updated_at: string
+          year: number
         }
         Insert: {
           course_id: string
@@ -187,6 +188,7 @@ export type Database = {
           unit_code: string
           unit_name: string
           updated_at?: string
+          year?: number
         }
         Update: {
           course_id?: string
@@ -196,6 +198,7 @@ export type Database = {
           unit_code?: string
           unit_name?: string
           updated_at?: string
+          year?: number
         }
         Relationships: [
           {
