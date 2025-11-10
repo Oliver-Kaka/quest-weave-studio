@@ -12,23 +12,20 @@ serve(async (req) => {
 
   try {
     const { type, text, messages, topic, notes, quizType, numQuestions } = await req.json();
-    const GOOGLE_AI_API_KEY = Deno.env.get("GOOGLE_AI_API_KEY");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 
-    if (!GOOGLE_AI_API_KEY) {
-      throw new Error("GOOGLE_AI_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
     }
 
     let prompt = "";
-    let conversationMessages = [];
+    let chatMessages = [];
 
     switch (type) {
       case "summarize":
         prompt = `Please provide a clear and concise summary of the following notes:\n\n${notes}`;
-        conversationMessages = [
-          {
-            role: "user",
-            parts: [{ text: prompt }],
-          },
+        chatMessages = [
+          { role: "user", content: prompt }
         ];
         break;
 
@@ -55,11 +52,8 @@ Format your response as a JSON array with the following structure:
 ]
 
 Make sure questions test understanding, not just memorization.`;
-        conversationMessages = [
-          {
-            role: "user",
-            parts: [{ text: prompt }],
-          },
+        chatMessages = [
+          { role: "user", content: prompt }
         ];
         break;
 
@@ -78,11 +72,8 @@ Format your response as a JSON array:
 ]
 
 Focus on key concepts, definitions, and important facts.`;
-        conversationMessages = [
-          {
-            role: "user",
-            parts: [{ text: prompt }],
-          },
+        chatMessages = [
+          { role: "user", content: prompt }
         ];
         break;
 
@@ -102,18 +93,15 @@ Format your response as a JSON array:
 ]
 
 Make it clear, concise, and engaging.`;
-        conversationMessages = [
-          {
-            role: "user",
-            parts: [{ text: prompt }],
-          },
+        chatMessages = [
+          { role: "user", content: prompt }
         ];
         break;
 
       case "chat":
-        conversationMessages = messages.map((msg: any) => ({
-          role: msg.role === "user" ? "user" : "model",
-          parts: [{ text: msg.content }],
+        chatMessages = messages.map((msg: any) => ({
+          role: msg.role,
+          content: msg.content
         }));
         break;
 
@@ -128,11 +116,8 @@ Please include:
 5. Milestones and checkpoints
 
 Make it practical and actionable for a student.`;
-        conversationMessages = [
-          {
-            role: "user",
-            parts: [{ text: prompt }],
-          },
+        chatMessages = [
+          { role: "user", content: prompt }
         ];
         break;
 
@@ -140,35 +125,43 @@ Make it practical and actionable for a student.`;
         throw new Error("Invalid request type");
     }
 
-    console.log("Calling Google AI API with:", { type });
+    console.log("Calling Lovable AI Gateway with:", { type });
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_AI_API_KEY}`,
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
         method: "POST",
         headers: {
+          "Authorization": `Bearer ${LOVABLE_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          contents: conversationMessages,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-          },
+          model: "google/gemini-2.5-flash",
+          messages: chatMessages,
+          temperature: 0.7,
+          max_tokens: 2048,
         }),
       }
     );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Google AI API error:", response.status, errorText);
-      throw new Error(`Google AI API error: ${response.status} - ${errorText}`);
+      console.error("Lovable AI Gateway error:", response.status, errorText);
+      
+      if (response.status === 429) {
+        throw new Error("Rate limit exceeded. Please try again later.");
+      }
+      if (response.status === 402) {
+        throw new Error("AI credits exhausted. Please add credits to your workspace.");
+      }
+      
+      throw new Error(`AI Gateway error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log("Google AI API response received");
+    console.log("Lovable AI Gateway response received");
 
-    const result = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated";
+    const result = data.choices?.[0]?.message?.content || "No response generated";
 
     return new Response(
       JSON.stringify({ result }),
