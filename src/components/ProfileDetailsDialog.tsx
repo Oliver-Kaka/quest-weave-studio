@@ -167,26 +167,26 @@ const ProfileDetailsDialog = ({ open, onOpenChange }: ProfileDetailsDialogProps)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Profile Details</DialogTitle>
           <DialogDescription>
-            Update your profile photo and request admin access
+            Update your profile photo{!isAdmin && " and request admin access"}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           {/* Profile Photo Section */}
-          <div className="space-y-4 pb-6 border-b border-border">
-            <Label className="text-base font-semibold">Profile Photo</Label>
+          <div className="space-y-3">
+            <Label className="text-sm font-semibold">Profile Photo</Label>
             <div className="flex items-center gap-4">
-              <Avatar className="w-20 h-20 border-2 border-primary/20">
+              <Avatar className="w-16 h-16 border-2 border-primary/20">
                 <AvatarImage src={profileImageUrl} alt="Profile" />
                 <AvatarFallback className="bg-primary text-primary-foreground">
-                  <User className="w-10 h-10" />
+                  <User className="w-8 h-8" />
                 </AvatarFallback>
               </Avatar>
-              <div>
+              <div className="flex-1">
                 <Input
                   id="profile-image"
                   type="file"
@@ -197,7 +197,7 @@ const ProfileDetailsDialog = ({ open, onOpenChange }: ProfileDetailsDialogProps)
                 />
                 <Label
                   htmlFor="profile-image"
-                  className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
+                  className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors text-sm"
                 >
                   {uploadingImage ? (
                     <>
@@ -207,12 +207,12 @@ const ProfileDetailsDialog = ({ open, onOpenChange }: ProfileDetailsDialogProps)
                   ) : (
                     <>
                       <Upload className="w-4 h-4" />
-                      Upload Photo
+                      Change Photo
                     </>
                   )}
                 </Label>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Max size: 2MB. JPG, PNG, or GIF.
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Max 2MB • JPG, PNG, or GIF
                 </p>
               </div>
             </div>
@@ -220,40 +220,39 @@ const ProfileDetailsDialog = ({ open, onOpenChange }: ProfileDetailsDialogProps)
 
           {/* Admin Request Section */}
           {!isAdmin && (
-            <div className="space-y-4 pt-2">
+            <div className="space-y-3 pt-4 border-t border-border">
               <div>
-                <Label htmlFor="admin-reason" className="text-base font-semibold">Request Admin Access</Label>
+                <Label htmlFor="admin-reason" className="text-sm font-semibold">Request Admin Access</Label>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Request elevated permissions to manage courses and approve resources
+                  Need permissions to manage courses and approve resources?
                 </p>
               </div>
               {hasExistingRequest ? (
-                <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
-                  <UserCheck className="w-5 h-5 text-primary" />
-                  <p className="text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <UserCheck className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                  <p className="text-sm text-amber-900 dark:text-amber-100">
                     You have a pending admin request under review
                   </p>
                 </div>
               ) : (
-                <>
+                <div className="space-y-3">
                   <Textarea
                     id="admin-reason"
-                    placeholder="Explain why you need admin access (e.g., 'I'm a teaching assistant for CS101 and need to approve study materials')"
+                    placeholder="Why do you need admin access? (e.g., 'I'm a TA for CS101')"
                     value={adminRequestReason}
                     onChange={(e) => setAdminRequestReason(e.target.value)}
-                    rows={4}
+                    rows={3}
                     className="resize-none"
                   />
                   <Button
                     onClick={handleRequestAdmin}
                     disabled={loading || !adminRequestReason.trim()}
                     className="w-full"
-                    size="lg"
                   >
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Submitting Request...
+                        Submitting...
                       </>
                     ) : (
                       <>
@@ -262,7 +261,7 @@ const ProfileDetailsDialog = ({ open, onOpenChange }: ProfileDetailsDialogProps)
                       </>
                     )}
                   </Button>
-                </>
+                </div>
               )}
             </div>
           )}
