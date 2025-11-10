@@ -177,8 +177,8 @@ const ProfileDetailsDialog = ({ open, onOpenChange }: ProfileDetailsDialogProps)
 
         <div className="space-y-6 py-4">
           {/* Profile Photo Section */}
-          <div className="space-y-4">
-            <Label>Profile Photo</Label>
+          <div className="space-y-4 pb-6 border-b border-border">
+            <Label className="text-base font-semibold">Profile Photo</Label>
             <div className="flex items-center gap-4">
               <Avatar className="w-20 h-20 border-2 border-primary/20">
                 <AvatarImage src={profileImageUrl} alt="Profile" />
@@ -220,8 +220,13 @@ const ProfileDetailsDialog = ({ open, onOpenChange }: ProfileDetailsDialogProps)
 
           {/* Admin Request Section */}
           {!isAdmin && (
-            <div className="space-y-4">
-              <Label htmlFor="admin-reason">Request Admin Access</Label>
+            <div className="space-y-4 pt-2">
+              <div>
+                <Label htmlFor="admin-reason" className="text-base font-semibold">Request Admin Access</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Request elevated permissions to manage courses and approve resources
+                </p>
+              </div>
               {hasExistingRequest ? (
                 <div className="flex items-center gap-2 p-4 bg-muted rounded-lg">
                   <UserCheck className="w-5 h-5 text-primary" />
@@ -233,25 +238,27 @@ const ProfileDetailsDialog = ({ open, onOpenChange }: ProfileDetailsDialogProps)
                 <>
                   <Textarea
                     id="admin-reason"
-                    placeholder="Explain why you need admin access..."
+                    placeholder="Explain why you need admin access (e.g., 'I'm a teaching assistant for CS101 and need to approve study materials')"
                     value={adminRequestReason}
                     onChange={(e) => setAdminRequestReason(e.target.value)}
                     rows={4}
+                    className="resize-none"
                   />
                   <Button
                     onClick={handleRequestAdmin}
                     disabled={loading || !adminRequestReason.trim()}
                     className="w-full"
+                    size="lg"
                   >
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Submitting...
+                        Submitting Request...
                       </>
                     ) : (
                       <>
                         <UserCheck className="mr-2 h-4 w-4" />
-                        Request Admin Access
+                        Submit Admin Request
                       </>
                     )}
                   </Button>
