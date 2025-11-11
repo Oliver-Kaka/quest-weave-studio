@@ -12,11 +12,31 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const SearchSection = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleBrowse = () => {
+    if (selectedCourse && selectedYear) {
+      navigate(`/search?course=${selectedCourse}&year=${selectedYear}`);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
 
   // Fetch courses from the database
   const { data: courses } = useQuery({
@@ -61,12 +81,14 @@ const SearchSection = () => {
                   placeholder="Enter unit code or unit name (e.g., CS101 or Introduction to Programming)"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={handleKeyPress}
                   className="pl-10 h-12 text-base border-2 focus-visible:ring-primary"
                 />
               </div>
               <Button 
                 size="lg" 
                 className="px-8 bg-primary hover:bg-primary/90 font-semibold"
+                onClick={handleSearch}
               >
                 Search
               </Button>
@@ -110,6 +132,8 @@ const SearchSection = () => {
             <Button 
               size="lg" 
               className="w-full bg-primary hover:bg-primary/90 font-semibold"
+              onClick={handleBrowse}
+              disabled={!selectedCourse || !selectedYear}
             >
               Find Courses
             </Button>
